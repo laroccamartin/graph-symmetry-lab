@@ -12,3 +12,5 @@
 | gen_jax_5to7_train8 | 0.144626 |  |
 | gen_torch_5to7to8 | 0.149657 | 14.210784 |
 | gen_torch_5to7_train8 | 0.145806 |  |
+| timing_jax_jit | 0.202951 |  |
+| timing_jax_nojit | 0.202951 |  |
