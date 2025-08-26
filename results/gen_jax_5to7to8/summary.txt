@@ -1,0 +1,2 @@
+Final MSE on training set: 0.150344
+Final MSE on test set: 13.221221

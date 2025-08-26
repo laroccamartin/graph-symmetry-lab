@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-echo '| run | mse |'
-echo '|---|---|'
+echo '| run | train_mse | test_mse |'
+echo '|---|---:|---:|'
 for d in results/*; do
-  if [ -f "$d/summary.txt" ]; then
-    mse=$(sed -E 's/.*: ([0-9.]+)/\1/' "$d/summary.txt")
-    echo "| $(basename "$d") | $mse |"
+  s="$d/summary.txt"
+  if [ -f "$s" ]; then
+    trn=$(grep -Eo 'training set: [0-9.]+$' "$s" | awk '{print $3}' | tail -n1)
+    tst=$(grep -Eo 'test set: [0-9.]+$' "$s" | awk '{print $3}' | tail -n1)
+    echo "| $(basename "$d") | ${trn:-} | ${tst:-} |"
   fi
 done

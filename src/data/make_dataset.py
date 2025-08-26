@@ -1,4 +1,4 @@
-import argparse, json, math, random
+import argparse, json, random
 import numpy as np
 import networkx as nx
 from networkx.algorithms.isomorphism import GraphMatcher
@@ -40,7 +40,8 @@ def main():
     ap.add_argument("--out", type=str, default="data/synth-graphs.npz")
     ap.add_argument("--n_graphs", type=int, default=300)
     ap.add_argument("--min_n", type=int, default=5)
-    ap.add_argument("--max_n", type=int, default=7)
+    ap.add_argument("--max_n", type=int, default=7)       # sampling upper bound
+    ap.add_argument("--pad_n", type=int, default=None)    # NEW: pad size (feature dim for onehot)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--feat_mode", type=str, default="onehot", choices=["onehot","scalar","constant"])
     args = ap.parse_args()
@@ -48,25 +49,24 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    max_n = args.max_n
-    feat_dim = max_n if args.feat_mode == "onehot" else 1
+    pad_n = args.pad_n if args.pad_n is not None else args.max_n
+    feat_dim = pad_n if args.feat_mode == "onehot" else 1
 
-    As, Xs, masks, ys, kinds = [], [], [], [], []
+    As, Xs, masks, ys = [], [], [], []
 
     for _ in range(args.n_graphs):
-        n = random.randint(args.min_n, args.max_n)
+        n = random.randint(args.min_n, args.max_n)  # sample size (5–7, etc.)
         G = random_graph(n)
         aut = count_automorphisms(G)
         y = float(np.log(max(1, aut)))
-        A, X, mask = graph_to_arrays(G, max_n=max_n, feat_dim=feat_dim, feat_mode=args.feat_mode)
+        A, X, mask = graph_to_arrays(G, max_n=pad_n, feat_dim=feat_dim, feat_mode=args.feat_mode)
         As.append(A); Xs.append(X); masks.append(mask); ys.append(y)
-        kinds.append("unknown")
 
     A = np.stack(As, axis=0)
     X = np.stack(Xs, axis=0)
     mask = np.stack(masks, axis=0)
     y = np.array(ys, dtype=np.float32)
-    meta = {"feat_dim": int(feat_dim), "max_n": int(max_n), "feat_mode": args.feat_mode}
+    meta = {"feat_dim": int(feat_dim), "max_n": int(pad_n), "feat_mode": args.feat_mode}
 
     save_npz(args.out, A=A, X=X, mask=mask, y=y, meta=json.dumps(meta))
 
