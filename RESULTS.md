@@ -101,3 +101,8 @@ steady_state_epoch_s_nojit=0.418
 | gen_torch_5to7_train8 | 0.145806 |  |
 | timing_jax_jit | 0.202951 |  |
 | timing_jax_nojit | 0.202951 |  |
+
+## JAX timing
+
+steady_state_epoch_s_jit=0.087
+steady_state_epoch_s_nojit=0.347
