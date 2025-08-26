@@ -162,3 +162,36 @@ R2=0.7297
 MAE=1.7171
 N=200
 
+
+## Test-set metrics (R², MAE)
+
+### gen_jax_5to7to8
+R2=0.1769
+MAE=2.2579
+N=200
+
+### gen_jax_5to7to8_pool_sum
+R2=-0.3254
+MAE=2.5843
+N=200
+
+### gen_jax_5to7to8_scalar
+R2=0.6515
+MAE=1.9431
+N=200
+
+### gen_torch_5to7to8
+R2=0.1153
+MAE=2.3849
+N=200
+
+### gen_torch_5to7to8_pool_sum
+R2=-0.7846
+MAE=3.0199
+N=200
+
+### gen_torch_5to7to8_scalar
+R2=0.7297
+MAE=1.7171
+N=200
+
