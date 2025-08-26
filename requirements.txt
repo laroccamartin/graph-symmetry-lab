@@ -1,0 +1,14 @@
+numpy>=1.23
+networkx>=3.0
+torch>=2.2
+
+# JAX/Optax pinned per Python version so both 3.8 and 3.10+ work
+jax==0.4.13; python_version < "3.9"
+jaxlib==0.4.13; python_version < "3.9"
+optax==0.1.7; python_version < "3.9"
+
+jax==0.4.30; python_version >= "3.9"
+jaxlib==0.4.30; python_version >= "3.9"
+optax>=0.1.9; python_version >= "3.9"
+
+pytest>=7.4
