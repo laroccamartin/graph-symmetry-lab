@@ -12,11 +12,38 @@ def degree_onehot(G: nx.Graph, feat_cap: int) -> np.ndarray:
 def degree_scalar(G: nx.Graph) -> np.ndarray:
     n = G.number_of_nodes()
     degs = np.array([d for _, d in G.degree()], dtype=np.float32).reshape(n, 1)
-    return degs  # raw degree; simple on purpose
+    return degs
 
 def constant_features(G: nx.Graph) -> np.ndarray:
     n = G.number_of_nodes()
     return np.ones((n, 1), dtype=np.float32)
+
+def laplacian_positional_encoding(G: nx.Graph, k: int) -> np.ndarray:
+    """Return k smallest nontrivial eigenvectors of the normalized Laplacian."""
+    n = G.number_of_nodes()
+    if n == 0 or k == 0:
+        return np.zeros((n, k), dtype=np.float32)
+    # Normalized Laplacian
+    L = nx.normalized_laplacian_matrix(G).toarray().astype(np.float64)
+    w, V = np.linalg.eigh(L)  # ascending eigenvalues
+    # Drop zero-eigenvalue vectors (connected comp count); pick next k
+    eps = 1e-8
+    nz_idx = np.where(w > eps)[0]
+    if len(nz_idx) == 0:
+        X = np.zeros((n, k), dtype=np.float32)
+    else:
+        start = nz_idx[0]
+        take = V[:, start:start+k]
+        # Fix eigenvector sign ambiguity deterministically
+        signs = np.sign(take[0, :] + 1e-12)
+        signs[signs == 0] = 1.0
+        take = take * signs
+        # Pad if fewer than k available
+        if take.shape[1] < k:
+            pad = np.zeros((n, k - take.shape[1]), dtype=take.dtype)
+            take = np.concatenate([take, pad], axis=1)
+        X = take[:, :k].astype(np.float32)
+    return X
 
 def pad_matrix(M: np.ndarray, out_shape: tuple) -> np.ndarray:
     out = np.zeros(out_shape, dtype=M.dtype)
@@ -31,7 +58,7 @@ def pad_features(X: np.ndarray, out_shape: tuple) -> np.ndarray:
     return out
 
 def graph_to_arrays(G: nx.Graph, max_n: int, feat_dim: int, feat_mode: str = "onehot"):
-    """Convert graph to padded (A, X, mask) given feature mode/dim."""
+    """Convert a NetworkX graph to padded adjacency, features, and mask."""
     n = G.number_of_nodes()
     A = nx.to_numpy_array(G, dtype=np.float32)
 
@@ -43,11 +70,13 @@ def graph_to_arrays(G: nx.Graph, max_n: int, feat_dim: int, feat_mode: str = "on
     elif feat_mode == "constant":
         assert feat_dim == 1, "feat_dim must be 1 for constant mode"
         X = constant_features(G)
+    elif feat_mode == "lap_pe":
+        # here feat_dim = k (number of eigenvectors)
+        X = laplacian_positional_encoding(G, feat_dim)
     else:
         raise ValueError(f"Unknown feat_mode: {feat_mode}")
 
-    mask = np.zeros((max_n,), dtype=np.float32)
-    mask[:n] = 1.0
+    mask = np.zeros((max_n,), dtype=np.float32); mask[:n] = 1.0
     A_pad = pad_matrix(A, (max_n, max_n)).astype(np.float32)
     X_pad = pad_features(X, (max_n, X.shape[1])).astype(np.float32)
     return A_pad, X_pad, mask
