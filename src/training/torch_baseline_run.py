@@ -13,6 +13,7 @@ def main():
     ap.add_argument("--data", type=str, default="data/synth-graphs.npz")
     ap.add_argument("--out_dir", type=str, default="results/baseline_torch")
     ap.add_argument("--epochs", type=int, default=20)
+    ap.add_argument("--pool", type=str, default="mean", choices=["mean","sum","max"])
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--hidden_dim", type=int, default=64)
@@ -32,7 +33,7 @@ def main():
     loader = DataLoader(TensorDataset(A, X, mask, y), batch_size=args.batch_size, shuffle=True)
 
     # Model/opt
-    model = TorchMPN(in_dim=ds.feat_dim, hidden_dim=args.hidden_dim, layers=args.layers)
+    model = TorchMPN(in_dim=ds.feat_dim, hidden_dim=args.hidden_dim, layers=args.layers, pool=args.pool)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_fn = nn.MSELoss()
 
@@ -89,7 +90,7 @@ def main():
     plt.plot(m, m)  # y=x
     plt.xlabel("True log|Aut(G)|")
     plt.ylabel("Predicted log|Aut(G)|")
-    plt.title(f"Torch baseline (layers={args.layers}, hidden={args.hidden_dim})\nMSE={final_mse:.4f}")
+    plt.title(f"Torch {args.pool} pool (layers={args.layers}, hidden={args.hidden_dim})\nMSE={final_mse:.4f}")
     plt.tight_layout()
     plt.savefig(os.path.join(args.out_dir, "scatter.png"), dpi=150)
     print(f"[saved] {metrics_path}\n[saved] {preds_path}\n[saved] {ckpt_path}\n[saved] scatter.png\n[saved] summary.txt")
