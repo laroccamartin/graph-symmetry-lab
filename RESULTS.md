@@ -299,3 +299,17 @@ R2=0.8073
 MAE=1.1421
 N=200
 
+
+## Sweep (small): pool × feature × framework (L=2,H=64)
+
+
+| framework | pool | feature | layers | hidden | seed | train_mse | test_mse |
+|---|---|---|---:|---:|---:|---:|---:|
+| torch | mean | onehot | 2 | 64 | 0 | 0.149657 | 14.210784 |
+| torch | mean | deg_lap_pe | 2 | 64 | 0 | 0.233839 | 1.625502 |
+| torch | sum | onehot | 2 | 64 | 0 | 0.118059 | 28.667725 |
+| torch | sum | deg_lap_pe | 2 | 64 | 0 | 0.113168 | 3.095674 |
+| jax | mean | onehot | 2 | 64 | 0 | 0.150344 | 13.221221 |
+| jax | mean | deg_lap_pe | 2 | 64 | 0 | 0.303067 | 1.711538 |
+| jax | sum | onehot | 2 | 64 | 0 | 0.129626 | 21.291138 |
+| jax | sum | deg_lap_pe | 2 | 64 | 0 | 0.121660 | 1.955511 |

@@ -1,0 +1,9 @@
+framework,pool,feature,layers,hidden,seed,train_mse,test_mse,out_dir
+torch,mean,onehot,2,64,0,0.149657,14.210784,results/sweep_small/torch_onehot_L2_H64_mean_s0
+torch,mean,deg_lap_pe,2,64,0,0.233839,1.625502,results/sweep_small/torch_deg_lap_pe_L2_H64_mean_s0
+torch,sum,onehot,2,64,0,0.118059,28.667725,results/sweep_small/torch_onehot_L2_H64_sum_s0
+torch,sum,deg_lap_pe,2,64,0,0.113168,3.095674,results/sweep_small/torch_deg_lap_pe_L2_H64_sum_s0
+jax,mean,onehot,2,64,0,0.150344,13.221221,results/sweep_small/jax_onehot_L2_H64_mean_s0
+jax,mean,deg_lap_pe,2,64,0,0.303067,1.711538,results/sweep_small/jax_deg_lap_pe_L2_H64_mean_s0
+jax,sum,onehot,2,64,0,0.129626,21.291138,results/sweep_small/jax_onehot_L2_H64_sum_s0
+jax,sum,deg_lap_pe,2,64,0,0.121660,1.955511,results/sweep_small/jax_deg_lap_pe_L2_H64_sum_s0
