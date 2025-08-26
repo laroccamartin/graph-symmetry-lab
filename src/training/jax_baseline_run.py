@@ -1,8 +1,10 @@
-import argparse, os, csv, pickle
+import argparse, os, csv, pickle, time
 import numpy as np
 import jax, jax.numpy as jnp
 from jax import jit, value_and_grad, random
-import optax, matplotlib.pyplot as plt
+import optax
+import matplotlib.pyplot as plt
+
 from ..data.dataset import GraphDataset
 from ..models.jax_mpn import init_params, forward
 
@@ -27,38 +29,43 @@ def main():
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--pool", type=str, default="mean", choices=["mean","sum","max"])
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--jit", type=str, default="true", choices=["true","false"])
     args = ap.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
 
+    # Load train arrays
     ds = GraphDataset(args.data)
     A, X, mask, y = ds.get_arrays()
     A = jnp.array(A); X = jnp.array(X); mask = jnp.array(mask); y = jnp.array(y)[:, None]
 
+    # Init params/opt
     key = random.PRNGKey(args.seed)
     params = init_params(key, in_dim=ds.feat_dim, hidden_dim=args.hidden_dim, layers=args.layers)
     opt = optax.adam(args.lr)
     opt_state = opt.init(params)
 
-    @jit
     def mse_loss(p, A_b, X_b, mask_b, y_b):
         pred = forward(p, A_b, X_b, mask_b, pool=args.pool)
         return jnp.mean((pred - y_b)**2)
 
-    @jit
-    def update(p, opt_state, A_b, X_b, mask_b, y_b):
+    def _update(p, opt_state, A_b, X_b, mask_b, y_b):
         loss, grads = value_and_grad(mse_loss)(p, A_b, X_b, mask_b, y_b)
         updates, opt_state = opt.update(grads, opt_state, p)
         p = optax.apply_updates(p, updates)
         return p, opt_state, loss
 
-    # log
-    with open(os.path.join(args.out_dir, "metrics.csv"), "w", newline="") as f:
-        csv.writer(f).writerow(["epoch", "train_mse"])
+    update = jit(_update) if args.jit == "true" else _update
+    print(f"[timing] JIT {'enabled' if args.jit=='true' else 'disabled'}")
 
-    # train
+    # Write CSV header
+    with open(os.path.join(args.out_dir, "metrics.csv"), "w", newline="") as f:
+        csv.writer(f).writerow(["epoch","train_mse","epoch_s"])
+
+    # Train
     num_batches = int(np.ceil(A.shape[0] / args.batch_size))
-    for epoch in range(1, args.epochs+1):
+    for epoch in range(1, args.epochs + 1):
+        t0 = time.time()
         total, n = 0.0, 0
         for i in range(num_batches):
             sl = slice(i*args.batch_size, (i+1)*args.batch_size)
@@ -66,15 +73,16 @@ def main():
             params, opt_state, loss = update(params, opt_state, A_b, X_b, mask_b, y_b)
             total += float(loss) * A_b.shape[0]; n += int(A_b.shape[0])
         train_mse = total / max(1, n)
-        print(f"epoch {epoch:03d} | train_mse={train_mse:.6f}")
+        dur = time.time() - t0
+        print(f"epoch {epoch:03d} | train_mse={train_mse:.6f} | epoch_s={dur:.3f}")
         with open(os.path.join(args.out_dir, "metrics.csv"), "a", newline="") as f:
-            csv.writer(f).writerow([epoch, f"{train_mse:.6f}"])
+            csv.writer(f).writerow([epoch, f"{train_mse:.6f}", f"{dur:.3f}"])
 
-    # save params
+    # Save params
     with open(os.path.join(args.out_dir, "params.pkl"), "wb") as f:
         pickle.dump(jax.tree_map(lambda x: np.array(x), params), f)
 
-    # evaluate train
+    # Evaluate on train
     y_true_tr, y_pred_tr, mse_tr = eval_on_dataset(params, args.data, args.pool)
     with open(os.path.join(args.out_dir, "summary.txt"), "w") as f:
         f.write(f"Final MSE on training set: {mse_tr:.6f}\n")
@@ -85,7 +93,7 @@ def main():
     plt.title(f"JAX {args.pool} (train) MSE={mse_tr:.4f}")
     plt.tight_layout(); plt.savefig(os.path.join(args.out_dir, "scatter_train.png"), dpi=150)
 
-    # evaluate test
+    # Evaluate on test if provided
     if args.test_data:
         y_true_te, y_pred_te, mse_te = eval_on_dataset(params, args.test_data, args.pool)
         with open(os.path.join(args.out_dir, "summary.txt"), "a") as f:

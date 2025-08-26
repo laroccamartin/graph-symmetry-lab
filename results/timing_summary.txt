@@ -1,0 +1,2 @@
+steady_state_epoch_s_jit=0.085
+steady_state_epoch_s_nojit=0.418

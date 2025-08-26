@@ -77,3 +77,8 @@ Notes:
 | gen_jax_5to7_train8 | 0.144626 |  |
 | gen_torch_5to7to8 | 0.149657 | 14.210784 |
 | gen_torch_5to7_train8 | 0.145806 |  |
+
+## JAX timing
+
+steady_state_epoch_s_jit=0.085
+steady_state_epoch_s_nojit=0.418
